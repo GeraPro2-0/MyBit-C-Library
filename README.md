@@ -16,7 +16,8 @@ Usage:
 - Compatible versions:
 
   C: Compatible from C89/C90 onwards.
-  C++: Compatible from C++11 onwards.
+  C++ (using ONLY C functions): Compatible from C++98 onwards.
+  C++ (using C++'s own features): Compatible from C++14 or C++11 onwards (with caution).
 
 - Freestanding:
 
