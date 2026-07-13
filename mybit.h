@@ -608,20 +608,69 @@ namespace mybit {
 
     template<typename T, typename = _enable_unsigned<T>>
     constexpr T bit_floor(T x) noexcept {
-        if (x == 0) return 0;
-        const unsigned bits = sizeof(T) * 8u;
-        unsigned shift = bits - 1u - countl_zero(x);
-        return T(1) << shift;
+        if (x == 0u) return 0u;
+        return T(1) << (static_cast<unsigned>((sizeof(T) * 8u) - 1u) - countl_zero(x));
     }
 
     template<typename T, typename = _enable_unsigned<T>>
     constexpr T bit_ceil(T x) noexcept {
-        if (x == 0) return 0;
-        T f = bit_floor(x);
-        return (f == x) ? f : (f << 1);
+        if (x <= 1u) return 1u;
+        return T(1) << (static_cast<unsigned>(sizeof(T) * 8u) - countl_zero(static_cast<T>(x - 1u)));
+    }
+
+    template<typename T, typename = _enable_unsigned<T>>
+    constexpr T rotl(T x, unsigned r) noexcept {
+        const unsigned bits = sizeof(T) * 8u;
+        r &= (bits - 1u);
+        return (x << r) | (x >> ((bits - r) & (bits - 1u)));
+    }
+
+    template<typename T, typename = _enable_unsigned<T>>
+    constexpr T rotr(T x, unsigned r) noexcept {
+        const unsigned bits = sizeof(T) * 8u;
+        r &= (bits - 1u);
+        return (x >> r) | (x << ((bits - r) & (bits - 1u)));
+    }
+
+    template<typename T, typename = _enable_unsigned<T>>
+    constexpr unsigned popcount(T x) noexcept {
+#if defined(__cpp_lib_is_constant_evaluated) || (defined(__cplusplus) && __cplusplus >= 202002L)
+        if (std::is_constant_evaluated()) {
+            unsigned n = 0u;
+            while (x) { n += unsigned(x & T(1)); x >>= 1u; }
+            return n;
+        }
+#endif
+        if (sizeof(T) <= 4u) return mybit_popcount32(static_cast<uint32_t>(x));
+        return mybit_popcount64(static_cast<uint64_t>(x));
+    }
+
+    template<typename T, typename = _enable_unsigned<T>>
+    constexpr T byteswap(T x) noexcept {
+        if (sizeof(T) == 1u) return x;
+        if (sizeof(T) == 2u) return static_cast<T>(mybit_bswap16(static_cast<uint16_t>(x)));
+        if (sizeof(T) == 4u) return static_cast<T>(mybit_bswap32(static_cast<uint32_t>(x)));
+        return static_cast<T>(mybit_bswap64(static_cast<uint64_t>(x)));
+    }
+
+    enum class endian {
+        little = 0,
+        big    = 1,
+        native = MYBIT_IS_LITTLE_ENDIAN ? little : big
+    };
+
+    template <typename To, typename From>
+    MYBIT_INLINE To bit_cast(const From& from) noexcept {
+#if defined(__cpp_static_assert) || (defined(__cplusplus) && __cplusplus >= 201103L)
+        static_assert(sizeof(To) == sizeof(From), "bit_cast requiere tipos del mismo tamano");
+#endif
+        To to;
+        char* d = reinterpret_cast<char*>(&to);
+        const char* s = reinterpret_cast<const char*>(&from);
+        for (size_t i = 0; i < sizeof(From); ++i) *d++ = *s++;
+        return to;
     }
 }
+#endif /* __cplusplus */
 
-#endif
-
-#endif
+#endif /* MYBIT_H */
