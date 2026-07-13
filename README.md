@@ -23,6 +23,13 @@ Usage:
 
   Since this library does not depend on an operating system (there is no stdlib.h or stdio.h, i.e., freestanding), it can be used anywhere, on any operating system, in a driver, in a kernel, and even in the firmware of a microchip without an OS (bare-metal).
 
+## Features
+- **Header-only**: Drop `mybit.h` into your project and you are ready to go.
+- **Portability**: Supports C (pre-C11 fallback, C11 `_Generic`) and C++ (C++11 up to C++20 `constexpr` templates).
+- **Hardware Acceleration**: Automatically detects and uses compiler builtins...
+- **Safe Macro Evaluation**: Fully protected against macro double-evaluation side effects (e.g., safely pass expressions like `mybit_bswap(*ptr++)` even in older pre-C11 compilers).
+- **Signed Integer Support**: Robust type casting rules seamlessly handle signed integers (`int`, `short`, `long long`) by forcing logical bitwise operations, eliminating compiler-specific undefined behaviors like arithmetic right-shift sign extensions.
+
 Notes:
 - Defines `mybit_bswap16`, `mybit_bswap32`, `mybit_bswap64`, plus a generic `mybit_bswap(x)` wrapper for C and C++.
 - Defines portable bit utilities:

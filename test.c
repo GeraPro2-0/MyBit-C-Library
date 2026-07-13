@@ -78,6 +78,27 @@ int main(void) {
     assert(mybit_rotr(0x00000003u, 1u) == 0x80000001u);
     assert(mybit_rotr(0x00000003ULL, 1u) == 0x8000000000000001ULL);
 
-    printf("mybit C framework tests: ok\n");
+    int32_t signed_neg = -1;
+    assert(mybit_countl_one(signed_neg) == 32);
+    assert(mybit_countr_one(signed_neg) == 32);
+    
+    int16_t short_neg = -1;
+    assert(mybit_bswap(short_neg) == (int16_t)0xFFFF);
+
+    uint32_t array_bswap[] = { 0x11223344, 0x55667788 };
+    uint32_t *ptr_bswap = array_bswap;
+    
+    uint32_t res_bswap = mybit_bswap(*ptr_bswap++); 
+    assert(res_bswap == 0x44332211);
+    assert(ptr_bswap == &array_bswap[1]);
+
+    uint32_t array_count[] = { 0xFFFFFFFF, 0x00000000 };
+    uint32_t *ptr_count = array_count;
+    
+    uint32_t res_count = mybit_countl_one(*ptr_count++);
+    assert(res_count == 32);
+    assert(ptr_count == &array_count[1]);
+
+    printf("All C tests passed successfully!\n");
     return 0;
 }

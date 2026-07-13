@@ -148,33 +148,52 @@ MYBIT_INLINE uint64_t mybit_bswap64(uint64_t x) {
 
 /* Provide helpers for unsigned long / unsigned long long so _Generic can
    dispatch on common C typedefs whose width may vary by platform. */
-MYBIT_INLINE uint64_t mybit_bswap_ul(unsigned long x) {
+MYBIT_INLINE unsigned long mybit_bswap_ul(unsigned long x) {
     if (sizeof(unsigned long) <= 4)
-        return (uint32_t)mybit_bswap32((uint32_t)x);
-    return mybit_bswap64((uint64_t)x);
+        return (unsigned long)mybit_bswap32((uint32_t)x);
+    return (unsigned long)mybit_bswap64((uint64_t)x);
 }
 
-MYBIT_INLINE uint64_t mybit_bswap_ull(unsigned long long x) {
+MYBIT_INLINE unsigned long long mybit_bswap_ull(unsigned long long x) {
     if (sizeof(unsigned long long) <= 4)
-        return (uint32_t)mybit_bswap32((uint32_t)x);
-    return mybit_bswap64((uint64_t)x);
+        return (unsigned long long)mybit_bswap32((uint32_t)x);
+    return (unsigned long long)mybit_bswap64((uint64_t)x);
 }
 
 #if MYBIT_HAS_C11
     #undef mybit_bswap
     #define mybit_bswap(x) _Generic((x), \
-        uint16_t: mybit_bswap16, \
-        uint32_t: mybit_bswap32, \
-        uint64_t: mybit_bswap64, \
-        unsigned int: mybit_bswap32, \
-        unsigned long: mybit_bswap_ul, \
-        unsigned long long: mybit_bswap_ull, \
-        size_t: mybit_bswap_ul \
-    )(x)
+        uint16_t: mybit_bswap16((uint16_t)(x)), \
+        short: mybit_bswap16((uint16_t)(x)), \
+        uint32_t: mybit_bswap32((uint32_t)(x)), \
+        int: mybit_bswap32((uint32_t)(x)), \
+        unsigned int: mybit_bswap32((uint32_t)(x)), \
+        uint64_t: mybit_bswap64((uint64_t)(x)), \
+        long long: mybit_bswap64((uint64_t)(x)), \
+        unsigned long long: mybit_bswap_ull((unsigned long long)(x)), \
+        long: mybit_bswap_ul((unsigned long)(x)), \
+        unsigned long: mybit_bswap_ul((unsigned long)(x)), \
+        size_t: mybit_bswap_ul((unsigned long)(x)) \
+    )
 #else
     /* If no _Generic, provide a safer sizeof-based macro that handles common typedefs */
+    MYBIT_INLINE unsigned int mybit_bswap_ui(unsigned int x) {
+        return (sizeof(unsigned int) <= 4) ? (unsigned int)mybit_bswap32((uint32_t)x) : (unsigned int)mybit_bswap64((uint64_t)x);
+    }
+    MYBIT_INLINE size_t mybit_bswap_sz(size_t x) {
+        return (sizeof(size_t) <= 4) ? (size_t)mybit_bswap32((uint32_t)x) : (size_t)mybit_bswap64((uint64_t)x);
+    }
+
     #undef mybit_bswap
-    #define mybit_bswap(x) (sizeof(x) <= 2 ? mybit_bswap16((uint16_t)(x)) : (sizeof(x) <= 4 ? mybit_bswap32((uint32_t)(x)) : mybit_bswap64((uint64_t)(x))))
+    #define mybit_bswap(x) ( \
+        sizeof(x) == 1 ? (x) : \
+        sizeof(x) == 2 ? mybit_bswap16((uint16_t)(x)) : \
+        sizeof(x) == 4 ? mybit_bswap32((uint32_t)(x)) : \
+        sizeof(x) == 8 ? mybit_bswap64((uint64_t)(x)) : \
+        sizeof(x) == sizeof(unsigned long) ? mybit_bswap_ul((unsigned long)(x)) : \
+        sizeof(x) == sizeof(size_t) ? mybit_bswap_sz((size_t)(x)) : \
+        mybit_bswap_ull((unsigned long long)(x)) \
+    )
 #endif
 
 /* Basic compile-time sanity checks */
@@ -187,6 +206,23 @@ MYBIT_STATIC_ASSERT(sizeof(uint64_t) == 8, "uint64_t must be 8 bytes");
 
 /* C wrappers for unsigned long and unsigned long long that dispatch based on
    compile-time size to the proper 32/64-bit implementation. */
+
+MYBIT_INLINE unsigned mybit_countl_one32(uint32_t x) {
+    return mybit_clz32(~x);
+}
+
+MYBIT_INLINE unsigned mybit_countr_one32(uint32_t x) {
+    return mybit_ctz32(~x);
+}
+
+MYBIT_INLINE unsigned mybit_countl_one64(uint64_t x) {
+    return mybit_clz64(~x);
+}
+
+MYBIT_INLINE unsigned mybit_countr_one64(uint64_t x) {
+    return mybit_ctz64(~x);
+}
+
 MYBIT_INLINE unsigned mybit_countl_one_ul(unsigned long x) {
     if (sizeof(unsigned long) <= 4) return mybit_countl_one32((uint32_t)x);
     return mybit_countl_one64((uint64_t)x);
@@ -209,26 +245,60 @@ MYBIT_INLINE unsigned mybit_countr_one_ull(unsigned long long x) {
 
 #if MYBIT_HAS_C11
     #define mybit_countl_one(x) _Generic((x), \
-        uint32_t: mybit_countl_one32, \
-        uint64_t: mybit_countl_one64, \
-        unsigned int: mybit_countl_one32, \
-        unsigned long: mybit_countl_one_ul, \
-        size_t: mybit_countl_one_ul, \
-        unsigned long long: mybit_countl_one_ull \
-    )(x)
+        uint32_t: mybit_countl_one32((uint32_t)(x)), \
+        int: mybit_countl_one32((uint32_t)(x)), \
+        unsigned int: mybit_countl_one32((uint32_t)(x)), \
+        uint64_t: mybit_countl_one64((uint64_t)(x)), \
+        long long: mybit_countl_one64((uint64_t)(x)), \
+        unsigned long long: mybit_countl_one_ull((unsigned long long)(x)), \
+        long: mybit_countl_one_ul((unsigned long)(x)), \
+        unsigned long: mybit_countl_one_ul((unsigned long)(x)), \
+        size_t: mybit_countl_one_ul((unsigned long)(x)) \
+    )
 
     #define mybit_countr_one(x) _Generic((x), \
-        uint32_t: mybit_countr_one32, \
-        uint64_t: mybit_countr_one64, \
-        unsigned int: mybit_countr_one32, \
-        unsigned long: mybit_countr_one_ul, \
-        size_t: mybit_countr_one_ul, \
-        unsigned long long: mybit_countr_one_ull \
-    )(x)
+        uint32_t: mybit_countr_one32((uint32_t)(x)), \
+        int: mybit_countr_one32((uint32_t)(x)), \
+        unsigned int: mybit_countr_one32((uint32_t)(x)), \
+        uint64_t: mybit_countr_one64((uint64_t)(x)), \
+        long long: mybit_countr_one64((uint64_t)(x)), \
+        unsigned long long: mybit_countr_one_ull((unsigned long long)(x)), \
+        long: mybit_countr_one_ul((unsigned long)(x)), \
+        unsigned long: mybit_countr_one_ul((unsigned long)(x)), \
+        size_t: mybit_countr_one_ul((unsigned long)(x)) \
+    )
 #else
     /* Fallback for pre-C11: use sizeof-based macro dispatch */
-    #define mybit_countl_one(x) (sizeof(x) <= 4 ? mybit_countl_one32((uint32_t)(x)) : mybit_countl_one64((uint64_t)(x)))
-    #define mybit_countr_one(x) (sizeof(x) <= 4 ? mybit_countr_one32((uint32_t)(x)) : mybit_countr_one64((uint64_t)(x)))
+    MYBIT_INLINE unsigned mybit_countl_one_ui(unsigned int x) {
+        return (sizeof(unsigned int) <= 4) ? mybit_countl_one32((uint32_t)x) : mybit_countl_one64((uint64_t)x);
+    }
+    MYBIT_INLINE unsigned mybit_countl_one_sz(size_t x) {
+        return (sizeof(size_t) <= 4) ? mybit_countl_one32((uint32_t)x) : mybit_countl_one64((uint64_t)x);
+    }
+    MYBIT_INLINE unsigned mybit_countr_one_ui(unsigned int x) {
+        return (sizeof(unsigned int) <= 4) ? mybit_countr_one32((uint32_t)x) : mybit_countr_one64((uint64_t)x);
+    }
+    MYBIT_INLINE unsigned mybit_countr_one_sz(size_t x) {
+        return (sizeof(size_t) <= 4) ? mybit_countr_one32((uint32_t)x) : mybit_countr_one64((uint64_t)x);
+    }
+
+    #define mybit_countl_one(x) ( \
+        sizeof(x) <= 2 ? mybit_countl_one32((uint32_t)(x)) : \
+        sizeof(x) == 4 ? mybit_countl_one32((uint32_t)(x)) : \
+        sizeof(x) == 8 ? mybit_countl_one64((uint64_t)(x)) : \
+        sizeof(x) == sizeof(unsigned long) ? mybit_countl_one_ul((unsigned long)(x)) : \
+        sizeof(x) == sizeof(size_t) ? mybit_countl_one_sz((size_t)(x)) : \
+        mybit_countl_one_ull((unsigned long long)(x)) \
+    )
+
+    #define mybit_countr_one(x) ( \
+        sizeof(x) <= 2 ? mybit_countr_one32((uint32_t)(x)) : \
+        sizeof(x) == 4 ? mybit_countr_one32((uint32_t)(x)) : \
+        sizeof(x) == 8 ? mybit_countr_one64((uint64_t)(x)) : \
+        sizeof(x) == sizeof(unsigned long) ? mybit_countr_one_ul((unsigned long)(x)) : \
+        sizeof(x) == sizeof(size_t) ? mybit_countr_one_sz((size_t)(x)) : \
+        mybit_countr_one_ull((unsigned long long)(x)) \
+    )
 #endif
 
 /* static assertions to ensure expected type sizes and 8-bit char */
@@ -292,13 +362,19 @@ MYBIT_INLINE unsigned mybit_popcount32(uint32_t x) {
 }
 
 MYBIT_INLINE uint32_t mybit_rotl32(uint32_t x, unsigned r) {
-    r &= 31u;
-    return (x << r) | (x >> ((32u - r) & 31u));
+#if defined(_MSC_VER)
+    return _rotl(x, (int)r);
+#else
+    return (x << (r & 31u)) | (x >> ((32u - r) & 31u));
+#endif
 }
 
 MYBIT_INLINE uint32_t mybit_rotr32(uint32_t x, unsigned r) {
-    r &= 31u;
-    return (x >> r) | (x << ((32u - r) & 31u));
+#if defined(_MSC_VER)
+    return _rotr(x, (int)r);
+#else
+    return (x >> (r & 31u)) | (x << ((32u - r) & 31u));
+#endif
 }
 
 MYBIT_INLINE uint32_t mybit_reverse32(uint32_t x) {
@@ -363,13 +439,19 @@ MYBIT_INLINE unsigned mybit_popcount64(uint64_t x) {
 }
 
 MYBIT_INLINE uint64_t mybit_rotl64(uint64_t x, unsigned r) {
-    r &= 63u;
-    return (x << r) | (x >> ((64u - r) & 63u));
+#if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_ARM64))
+    return _rotl64(x, (int)r);
+#else
+    return (x << (r & 63u)) | (x >> ((64u - r) & 63u));
+#endif
 }
 
 MYBIT_INLINE uint64_t mybit_rotr64(uint64_t x, unsigned r) {
-    r &= 63u;
-    return (x >> r) | (x << ((64u - r) & 63u));
+#if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_ARM64))
+    return _rotr64(x, (int)r);
+#else
+    return (x >> (r & 63u)) | (x << ((64u - r) & 63u));
+#endif
 }
 
 MYBIT_INLINE uint64_t mybit_reverse64(uint64_t x) {
@@ -418,22 +500,6 @@ MYBIT_INLINE uint64_t mybit_bit_ceil64(uint64_t x) {
     x |= x >> 16ULL;
     x |= x >> 32ULL;
     return x + 1ULL;
-}
-
-MYBIT_INLINE unsigned mybit_countl_one32(uint32_t x) {
-    return mybit_clz32(~x);
-}
-
-MYBIT_INLINE unsigned mybit_countr_one32(uint32_t x) {
-    return mybit_ctz32(~x);
-}
-
-MYBIT_INLINE unsigned mybit_countl_one64(uint64_t x) {
-    return mybit_clz64(~x);
-}
-
-MYBIT_INLINE unsigned mybit_countr_one64(uint64_t x) {
-    return mybit_ctz64(~x);
 }
 
 MYBIT_INLINE uint16_t mybit_load_le16(const void *ptr) {
@@ -542,6 +608,133 @@ MYBIT_INLINE void mybit_store_be64(void *ptr, uint64_t v) {
     #define bigswap(x)   (x)
 #endif
 
+/* Advanced bit manipulation operations (BMI1/BMI2 extensions) */
+MYBIT_INLINE uint32_t mybit_blsr32(uint32_t x) {
+#if defined(__BMI__) || defined(__x86_64__) || defined(_M_X64)
+    #if defined(__GNUC__) || defined(__clang__)
+        return __builtin_ia32_blsr_u32(x);
+    #elif defined(_MSC_VER) && defined(_M_X64)
+        return _blsr_u32(x);
+    #else
+        return x & (x - 1u);
+    #endif
+#else
+    return x & (x - 1u);
+#endif
+}
+
+MYBIT_INLINE uint64_t mybit_blsr64(uint64_t x) {
+#if defined(__BMI__) || defined(__x86_64__) || defined(_M_X64)
+    #if defined(__GNUC__) || defined(__clang__)
+        return __builtin_ia32_blsr_u64(x);
+    #elif defined(_MSC_VER) && defined(_M_X64)
+        return _blsr_u64(x);
+    #else
+        return x & (x - 1ULL);
+    #endif
+#else
+    return x & (x - 1ULL);
+#endif
+}
+
+MYBIT_INLINE uint32_t mybit_bextr32(uint32_t x, unsigned start, unsigned len) {
+#if defined(__BMI2__)
+    #if defined(__GNUC__) || defined(__clang__)
+        return __builtin_ia32_bextr_u32(x, (start & 0xFFu) | ((len & 0xFFu) << 8));
+    #elif defined(_MSC_VER)
+        return _bextr_u32(x, start, len);
+    #endif
+#else
+    if (len == 0u) return 0u;
+    uint32_t mask = (len >= 32u) ? 0xFFFFFFFFu : ((1u << len) - 1u);
+    return (start >= 32u) ? 0u : ((x >> start) & mask);
+#endif
+}
+
+MYBIT_INLINE uint64_t mybit_bextr64(uint64_t x, unsigned start, unsigned len) {
+#if defined(__BMI2__) && (defined(__x86_64__) || defined(_M_X64))
+    #if defined(__GNUC__) || defined(__clang__)
+        return __builtin_ia32_bextr_u64(x, (start & 0xFFu) | ((len & 0xFFu) << 8));
+    #elif defined(_MSC_VER)
+        return _bextr_u64(x, start, len);
+    #endif
+#else
+    if (len == 0u) return 0u;
+    uint64_t mask = (len >= 64u) ? 0xFFFFFFFFFFFFFFFFULL : ((1ULL << len) - 1ULL);
+    return (start >= 64u) ? 0u : ((x >> start) & mask);
+#endif
+}
+
+MYBIT_INLINE uint32_t mybit_pext32(uint32_t x, uint32_t mask) {
+#if defined(__BMI2__)
+    #if defined(__GNUC__) || defined(__clang__)
+        return __builtin_ia32_pext_u32(x, mask);
+    #elif defined(_MSC_VER)
+        return _pext_u32(x, mask);
+    #endif
+#else
+    uint32_t res = 0;
+    for (uint32_t bb = 1; mask; mask &= mask - 1, bb <<= 1) {
+        if (x & mask & -(int32_t)mask) res |= bb;
+    }
+    return res;
+#endif
+}
+
+MYBIT_INLINE uint64_t mybit_pext64(uint64_t x, uint64_t mask) {
+#if defined(__BMI2__) && (defined(__x86_64__) || defined(_M_X64))
+    #if defined(__GNUC__) || defined(__clang__)
+        return __builtin_ia32_pext_u64(x, mask);
+    #elif defined(_MSC_VER)
+        return _pext_u64(x, mask);
+    #endif
+#else
+    uint64_t res = 0;
+    for (uint64_t bb = 1; mask; mask &= mask - 1, bb <<= 1) {
+        if (x & mask & -(int64_t)mask) res |= bb;
+    }
+    return res;
+#endif
+}
+
+MYBIT_INLINE uint32_t mybit_pdep32(uint32_t x, uint32_t mask) {
+#if defined(__BMI2__)
+    #if defined(__GNUC__) || defined(__clang__)
+        return __builtin_ia32_pdep_u32(x, mask);
+    #elif defined(_MSC_VER)
+        return _pdep_u32(x, mask);
+    #endif
+#else
+    uint32_t res = 0;
+    while (mask) {
+        uint32_t m = mask & -(int32_t)mask;
+        if (x & 1) res |= m;
+        x >>= 1;
+        mask &= mask - 1;
+    }
+    return res;
+#endif
+}
+
+MYBIT_INLINE uint64_t mybit_pdep64(uint64_t x, uint64_t mask) {
+#if defined(__BMI2__) && (defined(__x86_64__) || defined(_M_X64))
+    #if defined(__GNUC__) || defined(__clang__)
+        return __builtin_ia32_pdep_u64(x, mask);
+    #elif defined(_MSC_VER)
+        return _pdep_u64(x, mask);
+    #endif
+#else
+    uint64_t res = 0;
+    while (mask) {
+        uint64_t m = mask & -(int64_t)mask;
+        if (x & 1) res |= m;
+        x >>= 1;
+        mask &= mask - 1;
+    }
+    return res;
+#endif
+}
+
 #ifdef __cplusplus
 }
 #endif
@@ -551,7 +744,7 @@ inline uint16_t mybit_bswap(uint16_t x) { return mybit_bswap16(x); }
 inline uint32_t mybit_bswap(uint32_t x) { return mybit_bswap32(x); }
 inline uint64_t mybit_bswap(uint64_t x) { return mybit_bswap64(x); }
 
-// Helpful constexpr templates for C++: usable at compile-time when possible.
+/* Helpful constexpr templates for C++: usable at compile-time when possible. */
 #include <type_traits>
 
 namespace mybit {
@@ -660,6 +853,7 @@ namespace mybit {
     };
 
     template <typename To, typename From>
+
     MYBIT_INLINE To bit_cast(const From& from) noexcept {
 #if defined(__cpp_static_assert) || (defined(__cplusplus) && __cplusplus >= 201103L)
         static_assert(sizeof(To) == sizeof(From), "bit_cast requiere tipos del mismo tamano");
@@ -669,6 +863,50 @@ namespace mybit {
         const char* s = reinterpret_cast<const char*>(&from);
         for (size_t i = 0; i < sizeof(From); ++i) *d++ = *s++;
         return to;
+    }
+
+    template<typename T, typename = _enable_unsigned<T>>
+    constexpr T blsr(T x) noexcept {
+        if (sizeof(T) <= 4u) return static_cast<T>(mybit_blsr32(static_cast<uint32_t>(x)));
+        return static_cast<T>(mybit_blsr64(static_cast<uint64_t>(x)));
+    }
+
+    template<typename T, typename = _enable_unsigned<T>>
+    constexpr T bextr(T x, unsigned start, unsigned len) noexcept {
+        if (sizeof(T) <= 4u) return static_cast<T>(mybit_bextr32(static_cast<uint32_t>(x), start, len));
+        return static_cast<T>(mybit_bextr64(static_cast<uint64_t>(x), start, len));
+    }
+
+    template<typename T, typename = _enable_unsigned<T>>
+    constexpr T pext(T x, T mask) noexcept {
+        if (sizeof(T) <= 4u) return static_cast<T>(mybit_pext32(static_cast<uint32_t>(x), static_cast<uint32_t>(mask)));
+        return static_cast<T>(mybit_pext64(static_cast<uint64_t>(x), static_cast<uint64_t>(mask)));
+    }
+
+    template<typename T, typename = _enable_unsigned<T>>
+    constexpr T pdep(T x, T mask) noexcept {
+        if (sizeof(T) <= 4u) return static_cast<T>(mybit_pdep32(static_cast<uint32_t>(x), static_cast<uint32_t>(mask)));
+        return static_cast<T>(mybit_pdep64(static_cast<uint64_t>(x), static_cast<uint64_t>(mask)));
+    }
+
+    template<typename T, typename = _enable_unsigned<T>>
+    constexpr T reverse(T x) noexcept {
+#if defined(__cpp_lib_is_constant_evaluated) || (defined(__cplusplus) && __cplusplus >= 202002L)
+        if (std::is_constant_evaluated()) {
+            const unsigned bits = sizeof(T) * 8u;
+            T r = 0;
+            for (unsigned i = 0u; i < bits; ++i) {
+                if ((x & (T(1) << i)) != 0) {
+                    r |= (T(1) << (bits - 1u - i));
+                }
+            }
+            return r;
+        }
+#endif
+        if (sizeof(T) <= 4u) {
+            return static_cast<T>(mybit_reverse32(static_cast<uint32_t>(x)) >> (32u - (sizeof(T) * 8u)));
+        }
+        return static_cast<T>(mybit_reverse64(static_cast<uint64_t>(x)));
     }
 }
 #endif /* __cplusplus */

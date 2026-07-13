@@ -48,6 +48,15 @@ int main() {
     float casted_float = mybit::bit_cast<float>(casted_int);
     assert(casted_float == 1.0f);
 
-    std::cout << "mybit C++ wrappers: ok\n";
+    uint32_t data_bswap[] = { 0x11223344, 0x0 };
+    uint32_t *p_bswap = data_bswap;
+    uint32_t val_bswap = mybit_bswap(*p_bswap++);
+    assert(val_bswap == 0x44332211);
+    assert(p_bswap == &data_bswap[1]);
+
+    int32_t signed_val = -1; 
+    assert(mybit_countl_one(signed_val) == 32);
+
+    std::cout << "All C++ tests passed successfully!\n";
     return 0;
 }
