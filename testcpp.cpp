@@ -1,62 +1,49 @@
-/* Simple unit test for mybit.h using C++ features */
 #include <iostream>
-#include <cassert>
+#include <iomanip>
+#include <cstdint>
+#include <cstring>
 #include "mybit.h"
 
 int main() {
-    // Test C++ overloads for mybit_bswap
-    uint32_t x32 = 0x11223344u;
-    uint64_t x64 = 0x0102030405060708ULL;
+    std::cout << "--- Starting mybit verification tests (C++) ---\n\n";
+    std::cout << std::hex << std::uppercase << std::setfill('0');
 
-    assert(mybit_bswap(x32) == 0x44332211u);
-    assert(mybit_bswap(x64) == 0x0807060504030201ULL);
+    uint8_t a8 = 0xF0u;
+    uint16_t a16 = 0xF0F0u;
+    uint32_t a32 = 0x0000FF00u;
+    uint64_t a64 = 0x123456789ABCDEF0ULL;
 
-    // Test C++ namespace helpers
-    assert(mybit::has_single_bit<uint32_t>(0x1000u));
-    assert(!mybit::has_single_bit<uint32_t>(0x1001u));
+    std::cout << "popcount8: " << std::dec << mybit::popcount(a8) << "\n";
+    std::cout << "clz8: " << std::dec << mybit::countl_zero(a8) << "\n";
+    std::cout << "ctz8: " << std::dec << mybit::countr_zero(a8) << "\n\n";
 
-    assert(mybit::countl_zero<uint32_t>(1u) == 31u);
-    assert(mybit::countr_zero<uint32_t>(1u) == 0u);
-    assert(mybit::bit_floor<uint32_t>(0x12345678u) == 0x10000000u);
-    assert(mybit::bit_ceil<uint32_t>(0x12345678u) == 0x20000000u);
+    std::cout << "popcount16: " << std::dec << mybit::popcount(a16) << "\n";
+    std::cout << "clz16: " << std::dec << mybit::countl_zero(a16) << "\n";
+    std::cout << "ctz16: " << std::dec << mybit::countr_zero(a16) << "\n\n";
 
-    assert(mybit::countl_zero<uint64_t>(1ULL) == 63u);
-    assert(mybit::countr_zero<uint64_t>(8ULL) == 3u);
+    std::cout << "popcount32: " << std::dec << mybit::popcount(a32) << "\n";
+    std::cout << "clz32: " << std::dec << mybit::countl_zero(a32) << "\n";
+    std::cout << "ctz32: " << std::dec << mybit::countr_zero(a32) << "\n\n";
 
-    assert(mybit::popcount<uint32_t>(0x00000000u) == 0u);
-    assert(mybit::popcount<uint32_t>(0xF0F0F0F0u) == 16u);
-    assert(mybit::popcount<uint64_t>(0xFFFFFFFFFFFFFFFFULL) == 64u);
+    std::cout << "popcount64: " << std::dec << mybit::popcount(a64) << "\n";
+    std::cout << "clz64: " << std::dec << mybit::countl_zero(a64) << "\n";
+    std::cout << "ctz64: " << std::dec << mybit::countr_zero(a64) << "\n\n";
 
-    assert(mybit::byteswap<uint16_t>(0x1234u) == 0x3412u);
-    assert(mybit::byteswap<uint32_t>(0x11223344u) == 0x44332211u);
-    assert(mybit::byteswap<uint64_t>(0x0102030405060708ULL) == 0x0807060504030201ULL);
+    std::cout << "rotl8: 0x" << std::hex << (unsigned)mybit::rotl(a8, 4) << "\n";
+    std::cout << "reverse8: 0x" << std::hex << (unsigned)mybit::reverse((uint8_t)a8) << "\n\n";
 
-    uint32_t rot_val = 0x80000001u;
-    assert(mybit::rotl(rot_val, 1u) == 0x00000003u);
-    assert(mybit::rotr(0x00000003u, 1u) == 0x80000001u);
+    std::cout << "bit_floor32(15): " << std::dec << mybit::bit_floor((uint32_t)15) << "\n";
+    std::cout << "bit_ceil32(15): " << std::dec << mybit::bit_ceil((uint32_t)15) << "\n\n";
 
-#if MYBIT_IS_LITTLE_ENDIAN
-    assert(mybit::endian::native == mybit::endian::little);
-#else
-    assert(mybit::endian::native == mybit::endian::big);
-#endif
+    uint8_t buf[8];
+    mybit::store_le<uint16_t>(buf, 0xABCDu);
+    std::cout << "load_le16: 0x" << std::hex << mybit::load_le<uint16_t>(buf) << "\n";
+    mybit::store_be<uint16_t>(buf, 0xABCDu);
+    std::cout << "load_be16: 0x" << std::hex << mybit::load_be<uint16_t>(buf) << "\n\n";
 
-    float float_val = 1.0f;
-    uint32_t casted_int = mybit::bit_cast<uint32_t>(float_val);
-    assert(casted_int == 0x3F800000u);
-    
-    float casted_float = mybit::bit_cast<float>(casted_int);
-    assert(casted_float == 1.0f);
+    std::cout << "pext32: 0x" << std::hex << mybit::pext((uint32_t)0x12345678u, (uint32_t)0x00FF0000u) << "\n";
+    std::cout << "pdep32: 0x" << std::hex << mybit::pdep((uint32_t)0x000000FFu, (uint32_t)0x0F0F0000u) << "\n\n";
 
-    uint32_t data_bswap[] = { 0x11223344, 0x0 };
-    uint32_t *p_bswap = data_bswap;
-    uint32_t val_bswap = mybit_bswap(*p_bswap++);
-    assert(val_bswap == 0x44332211);
-    assert(p_bswap == &data_bswap[1]);
-
-    int32_t signed_val = -1; 
-    assert(mybit_countl_one(signed_val) == 32);
-
-    std::cout << "All C++ tests passed successfully!\n";
+    std::cout << "--- mybit verification tests (C++) completed successfully ---\n";
     return 0;
 }

@@ -10,8 +10,17 @@ Usage:
 
 - Example: compile and run the test:
 
-  cc -std=c11 -O2 tests/test_mybit.c -o bin/test_mybit
-  ./bin/test_mybit
+  - GCC:
+    gcc -std=c11 -O2 test.c -o test_mybit ; ./test_mybit
+    g++ -std=c++11 -O2 testcpp.cpp -o testcpp_mybit ; ./testcpp_mybit
+  ----------------------------------------------------------------------------
+  - Clang:
+    clang -std=c11 -O2 test.c -o test_mybit ; ./test_mybit
+    clang++ -std=c++11 -O2 testcpp.cpp -o testcpp_mybit ; ./testcpp_mybit
+  ----------------------------------------------------------------------------
+  - MSVC:
+    cl /std:c11 /O2 test.c /Fe:test_mybit.exe && test_mybit.exe
+    cl /std:c++14 /O2 testcpp.cpp /Fe:testcpp_mybit.exe && testcpp_mybit.exe
 
 - Compatible versions:
 
@@ -47,3 +56,29 @@ Notes:
    - `mybit_countl_one32`, `mybit_countr_one32`, `mybit_countl_one64`, `mybit_countr_one64`
    - C++ `constexpr` templates in namespace `mybit` for `countl_one`, `countr_one`, `bit_floor`, `bit_ceil`, `has_single_bit`, etc.
 - Define `MYBIT_ASSUME_LITTLE_ENDIAN` to 1 or 0 to override endianness detection for cross-compilation.
+
+## Added in this update
+
+This release adds full 8-bit and 16-bit counterparts for the existing 32/64-bit helpers, generic C wrappers, and C++ overloads/templates.
+
+- **8-bit helpers:** `mybit_clz8`, `mybit_ctz8`, `mybit_popcount8`, `mybit_rotl8`, `mybit_rotr8`, `mybit_reverse8`, `mybit_has_single_bit8`, `mybit_bit_floor8`, `mybit_bit_ceil8`, plus `mybit_load_le8`/`mybit_load_be8` and `mybit_store_le8`/`mybit_store_be8`.
+- **16-bit helpers:** `mybit_clz16`, `mybit_ctz16`, `mybit_popcount16`, `mybit_rotl16`, `mybit_rotr16`, `mybit_reverse16`, `mybit_has_single_bit16`, `mybit_bit_floor16`, `mybit_bit_ceil16`, plus endian load/store `mybit_load_le16`/`mybit_load_be16` and `mybit_store_le16`/`mybit_store_be16`.
+- **C generic wrappers:** When compiling as C11 the header exposes `_Generic` wrappers such as `mybit_clz(x)`, `mybit_ctz(x)`, `mybit_popcount(x)`, `mybit_rotl(x, r)`, `mybit_rotr(x, r)`, `mybit_reverse(x)`, `mybit_bit_floor(x)`, `mybit_bit_ceil(x)`, and `mybit_has_single_bit(x)` that dispatch to the correct width (8/16/32/64). Pre-C11 builds use sizeof-based macro fallbacks to provide the same convenience.
+- **C++ wrappers and templates:** C++ builds provide overloads and `constexpr` templates in the `mybit` namespace (e.g., `mybit::popcount`, `mybit::countl_zero`, `mybit::countr_zero`, `mybit::rotl`, `mybit::reverse`, `mybit::bit_floor`, `mybit::bit_ceil`, `mybit::load_le`, `mybit::store_le`, `mybit::pext`, `mybit::pdep`). These are enabled for unsigned integer types and provide type-safe, constexpr-capable alternatives to the C macros.
+
+Example (C):
+
+```
+#include "mybit.h"
+uint32_t x = 0x0F00;
+int leading = mybit_clz(x); // dispatches to mybit_clz32
+```
+
+Example (C++):
+
+```
+#include "mybit.h"
+using namespace mybit;
+constexpr auto p = popcount(uint32_t{0xFF00});
+constexpr auto f = bit_floor(uint32_t{15});
+```
